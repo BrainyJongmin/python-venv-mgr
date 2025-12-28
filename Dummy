@@ -1,0 +1,13 @@
+# python-venv-mgr
+
+A minimal command-line utility to create, manage, and remove Python virtual environments.
+
+Currently this repository contains the initial project scaffolding.
+
+Features to add:
+- Create and remove venvs
+- List existing venvs
+- Activate/deactivate shortcuts (platform-specific)
+- Integration with pyenv and poetry
+
+License: MIT
