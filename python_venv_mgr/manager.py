@@ -126,8 +126,8 @@ class VirtualEnvManager:
 
         self._run([str(venv_python), "-m", "pip", "install", *requirements])
 
-    def list_installed_packages(self, venv_path: Path | str) -> list[str]:
-        venv_python = self._venv_python(Path(venv_path))
+    def list_installed_packages(self, name_or_path: Path | str) -> list[str]:
+        venv_python = self.get_python_path(name_or_path)
         output = self._run(
             [str(venv_python), "-m", "pip", "freeze"], capture_output=True
         )
