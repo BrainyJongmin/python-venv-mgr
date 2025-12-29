@@ -133,6 +133,18 @@ class VirtualEnvManager:
         )
         return [line.strip() for line in output.splitlines() if line.strip()]
 
+    def get_python_path(self, name_or_path: Path | str) -> Path:
+        venv_path = Path(name_or_path)
+        if venv_path.is_absolute() or venv_path.exists():
+            return self._venv_python(venv_path)
+
+        name = str(name_or_path)
+        for record in self._load_registry():
+            if record["name"] == name:
+                return self._venv_python(Path(record["path"]))
+
+        return self._venv_python((self.base_dir / name).resolve())
+
     def find_venvs_by_requirements(
         self, requirements: Sequence[str] | Path | str
     ) -> list[Path]:
