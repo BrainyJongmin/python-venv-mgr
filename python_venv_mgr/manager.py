@@ -107,6 +107,18 @@ class VirtualEnvManager:
 
         return removed_from_registry
 
+    def clear_all_venvs(self, *, remove_dirs: bool = True) -> list[Path]:
+        records = self._load_registry()
+        removed_paths = [Path(record["path"]) for record in records]
+        self._save_registry([])
+
+        if remove_dirs:
+            for venv_path in removed_paths:
+                if venv_path.exists():
+                    shutil.rmtree(venv_path)
+
+        return removed_paths
+
     def install_requirements(
         self, venv_path: Path | str, requirements: Sequence[str] | Path | str
     ) -> None:
