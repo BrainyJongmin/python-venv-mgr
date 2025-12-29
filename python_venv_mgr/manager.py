@@ -19,18 +19,22 @@ class VenvRecord:
 class VirtualEnvManager:
     """Manage Windows virtual environments based on a base interpreter."""
 
+    DEFAULT_BASE_DIR = Path("C:/venvs")
+    DEFAULT_BASE_INTERPRETER = Path("C:/python-embed/python.exe")
+
     def __init__(
         self,
-        base_interpreter: Path | str,
+        base_interpreter: Path | str | None = None,
         *,
         base_dir: Path | str | None = None,
         registry_path: Path | str | None = None,
     ) -> None:
-        self.base_interpreter = Path(base_interpreter)
+        base_interpreter_value = base_interpreter or self.DEFAULT_BASE_INTERPRETER
+        self.base_interpreter = Path(base_interpreter_value)
         if not self.base_interpreter.is_file():
             raise FileNotFoundError(f"Base interpreter not found: {self.base_interpreter}")
 
-        self.base_dir = Path(base_dir) if base_dir else Path.cwd() / "venvs"
+        self.base_dir = Path(base_dir) if base_dir else self.DEFAULT_BASE_DIR
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
         if registry_path:
