@@ -126,13 +126,15 @@ class VirtualEnvManager:
     def install_requirements(
         self, venv_path: Path | str, requirements: Sequence[str] | Path | str
     ) -> None:
-        venv_python = self._venv_python(Path(venv_path))
+        venv_root = Path(venv_path)
+        venv_python = self._venv_python(venv_root)
 
         if isinstance(requirements, (str, Path)):
             req_path = Path(requirements)
             if req_path.exists():
-                self._run(
-                    [str(venv_python), "-m", "pip", "install", "-r", str(req_path)]
+                self._run_pip_install(
+                    venv_root,
+                    [str(venv_python), "-m", "pip", "install", "-r", str(req_path)],
                 )
                 return
             raise FileNotFoundError(f"Requirements file not found: {req_path}")
@@ -140,7 +142,10 @@ class VirtualEnvManager:
         if not requirements:
             return
 
-        self._run([str(venv_python), "-m", "pip", "install", *requirements])
+        self._run_pip_install(
+            venv_root,
+            [str(venv_python), "-m", "pip", "install", *requirements],
+        )
 
     def list_installed_packages(self, name_or_path: Path | str) -> list[str]:
         venv_python = self.get_python_path(name_or_path)
@@ -233,3 +238,16 @@ class VirtualEnvManager:
             capture_output=capture_output,
         )
         return result.stdout if capture_output else ""
+
+    def _run_pip_install(self, venv_path: Path, command: Sequence[str]) -> None:
+        result = subprocess.run(
+            command,
+            text=True,
+            capture_output=True,
+        )
+        log_path = venv_path / "pip-install.log"
+        log_path.write_text(
+            (result.stdout or "") + (result.stderr or ""),
+            encoding="utf-8",
+        )
+        result.check_returncode()
