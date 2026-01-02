@@ -18,7 +18,7 @@ venv_path = manager.create_venv(
     requirements=["pandas==2.2.2", "numpy==1.26.4"],
 )
 
-installed = manager.list_installed_packages(venv_path)
+installed = manager.list_installed_packages("analytics")
 print(installed)
 
 matches = manager.find_venvs_by_requirements(["pandas==2.2.2", "numpy==1.26.4"])

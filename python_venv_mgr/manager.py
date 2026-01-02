@@ -155,16 +155,22 @@ class VirtualEnvManager:
         return [line.strip() for line in output.splitlines() if line.strip()]
 
     def get_python_path(self, name_or_path: Path | str) -> Path:
-        venv_path = Path(name_or_path)
-        if venv_path.is_absolute() or venv_path.exists():
-            return self._venv_python(venv_path)
+        venv_path = self._resolve_venv_path(name_or_path)
+        return self._venv_python(venv_path)
 
-        name = str(name_or_path)
-        for record in self._load_registry():
-            if record["name"] == name:
-                return self._venv_python(Path(record["path"]))
+    def copy_pip_install_log(
+        self, name_or_path: Path | str, output_dir: Path | str
+    ) -> Path | None:
+        venv_path = self._resolve_venv_path(name_or_path)
+        log_path = venv_path / "pip-install.log"
+        if not log_path.exists():
+            return None
 
-        return self._venv_python((self.base_dir / name).resolve())
+        destination_dir = Path(output_dir)
+        destination_dir.mkdir(parents=True, exist_ok=True)
+        destination_path = destination_dir / log_path.name
+        shutil.copy2(log_path, destination_path)
+        return destination_path
 
     def find_venvs_by_requirements(
         self, requirements: Sequence[str] | Path | str
@@ -219,6 +225,18 @@ class VirtualEnvManager:
 
     def _venv_python(self, venv_path: Path) -> Path:
         return venv_path / "Scripts" / "python.exe"
+
+    def _resolve_venv_path(self, name_or_path: Path | str) -> Path:
+        venv_path = Path(name_or_path)
+        if venv_path.is_absolute() or venv_path.exists():
+            return venv_path
+
+        name = str(name_or_path)
+        for record in self._load_registry():
+            if record["name"] == name:
+                return Path(record["path"])
+
+        return (self.base_dir / name).resolve()
 
     def _load_registry(self) -> list[dict[str, str | None]]:
         content = self.registry_path.read_text(encoding="utf-8")
