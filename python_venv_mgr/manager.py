@@ -128,12 +128,13 @@ class VirtualEnvManager:
     ) -> None:
         venv_root = Path(venv_path)
         venv_python = self._venv_python(venv_root)
+        log_path = venv_root / "pip-install.log"
 
         if isinstance(requirements, (str, Path)):
             req_path = Path(requirements)
             if req_path.exists():
                 self._run_pip_install(
-                    venv_root,
+                    log_path,
                     [str(venv_python), "-m", "pip", "install", "-r", str(req_path)],
                 )
                 return
@@ -143,14 +144,13 @@ class VirtualEnvManager:
             return
 
         self._run_pip_install(
-            venv_root,
+            log_path,
             [str(venv_python), "-m", "pip", "install", *requirements],
         )
 
     def install_wheels_from_dir(
-        self, name_or_path: Path | str, wheels_dir: Path | str
+        self, wheels_dir: Path | str, name_or_path: Path | str | None = None
     ) -> list[Path]:
-        venv_path = self._resolve_venv_path(name_or_path)
         wheels_path = Path(wheels_dir)
         if not wheels_path.exists():
             raise FileNotFoundError(f"Wheels directory not found: {wheels_path}")
@@ -159,9 +159,15 @@ class VirtualEnvManager:
         if not wheel_files:
             return []
 
-        venv_python = self._venv_python(venv_path)
+        if name_or_path is None:
+            venv_python = self.base_interpreter
+            log_path = self.base_dir / "base-pip-install.log"
+        else:
+            venv_path = self._resolve_venv_path(name_or_path)
+            venv_python = self._venv_python(venv_path)
+            log_path = venv_path / "pip-install.log"
         self._run_pip_install(
-            venv_path,
+            log_path,
             [str(venv_python), "-m", "pip", "install", *[str(p) for p in wheel_files]],
         )
         return wheel_files
@@ -276,13 +282,13 @@ class VirtualEnvManager:
         )
         return result.stdout if capture_output else ""
 
-    def _run_pip_install(self, venv_path: Path, command: Sequence[str]) -> None:
+    def _run_pip_install(self, log_path: Path, command: Sequence[str]) -> None:
         result = subprocess.run(
             command,
             text=True,
             capture_output=True,
         )
-        log_path = venv_path / "pip-install.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
         with log_path.open("a", encoding="utf-8") as log_file:
             log_file.write(result.stdout or "")
             log_file.write(result.stderr or "")
