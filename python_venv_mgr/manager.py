@@ -147,6 +147,25 @@ class VirtualEnvManager:
             [str(venv_python), "-m", "pip", "install", *requirements],
         )
 
+    def install_wheels_from_dir(
+        self, name_or_path: Path | str, wheels_dir: Path | str
+    ) -> list[Path]:
+        venv_path = self._resolve_venv_path(name_or_path)
+        wheels_path = Path(wheels_dir)
+        if not wheels_path.exists():
+            raise FileNotFoundError(f"Wheels directory not found: {wheels_path}")
+
+        wheel_files = sorted(wheels_path.rglob("*.whl"))
+        if not wheel_files:
+            return []
+
+        venv_python = self._venv_python(venv_path)
+        self._run_pip_install(
+            venv_path,
+            [str(venv_python), "-m", "pip", "install", *[str(p) for p in wheel_files]],
+        )
+        return wheel_files
+
     def list_installed_packages(self, name_or_path: Path | str) -> list[str]:
         venv_python = self.get_python_path(name_or_path)
         output = self._run(
@@ -264,8 +283,7 @@ class VirtualEnvManager:
             capture_output=True,
         )
         log_path = venv_path / "pip-install.log"
-        log_path.write_text(
-            (result.stdout or "") + (result.stderr or ""),
-            encoding="utf-8",
-        )
+        with log_path.open("a", encoding="utf-8") as log_file:
+            log_file.write(result.stdout or "")
+            log_file.write(result.stderr or "")
         result.check_returncode()
