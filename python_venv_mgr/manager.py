@@ -53,11 +53,6 @@ class VirtualEnvManager:
         path: Path | str | None = None,
         requirements: Sequence[str] | Path | str | None = None,
     ) -> Path:
-        if requirements:
-            existing = self.find_venvs_by_requirements(requirements)
-            if existing:
-                return existing[0]
-
         venv_path = Path(path) if path else self.base_dir / name
         venv_path = venv_path.resolve()
 
@@ -83,6 +78,19 @@ class VirtualEnvManager:
         )
         self._save_registry(records)
         return venv_path
+
+    def get_or_create_venv(
+        self,
+        name: str,
+        *,
+        path: Path | str | None = None,
+        requirements: Sequence[str] | Path | str | None = None,
+    ) -> Path:
+        if requirements:
+            existing = self.find_venvs_by_requirements(requirements)
+            if existing:
+                return existing[0]
+        return self.create_venv(name, path=path, requirements=requirements)
 
     def list_venvs(self) -> list[VenvRecord]:
         records = []
